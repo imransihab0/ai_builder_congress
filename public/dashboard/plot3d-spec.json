@@ -1,0 +1,296 @@
+{
+  "version": "1.0.0",
+  "name": "Smart Farm Plot Floating Island",
+  "source": "written-brief",
+  "fidelity": "stylized-approximation",
+  "limitation": "No EcoSolutions reference image was available. Visible and hidden geometry is a stylized interpretation of the written brief, not an image-matched reconstruction.",
+  "objectClass": {
+    "formLanguage": [
+      "organic",
+      "botanical-like",
+      "sculptural"
+    ],
+    "structureKind": "layered assembly with repeated crop modules",
+    "motionPotential": "whole-object transform with reversible component actions",
+    "materialFamilies": [
+      "soil",
+      "plant",
+      "rock"
+    ]
+  },
+  "coordinateSystem": {
+    "handedness": "right-handed",
+    "up": "+Y",
+    "plotPlane": "XZ",
+    "polygonInput": "GeoJSON longitude/latitude converted around the polygon centroid"
+  },
+  "deterministicSeedRule": {
+    "algorithm": "32-bit FNV-1a string hash followed by Mulberry32",
+    "input": "plot.id",
+    "appliesTo": [
+      "crop placement",
+      "crop yaw",
+      "crop scale"
+    ],
+    "invariant": "The same plot id and plant count produce the same crop layout in desktop and lite modes; lite mode uses the deterministic prefix of the desktop layout."
+  },
+  "qualityContract": {
+    "definitionOfDone": "A readable floating plot island with a GeoJSON-derived top silhouette, three separable soil bands, a faceted moisture-tinted underside, crop-specific procedural repetition, clickable data hotspots, keyboard and pointer control, and a complete static fallback.",
+    "silhouette": {
+      "target": "The top-down outline preserves the source plot polygon while the side view reads as a compact floating island with a distinct faceted point.",
+      "blockingFailures": [
+        "generic circular or rectangular top footprint",
+        "underside detached from the soil body",
+        "crop canopy obscures the complete plot outline"
+      ]
+    },
+    "soilStrataReadability": {
+      "target": "Three adjacent soil bands remain distinguishable by value and hue at the default camera and become more legible when Soil Metrics is active.",
+      "blockingFailures": [
+        "fused single-colour soil wall",
+        "gaps at the resting state",
+        "explode action that cannot return to the resting state"
+      ]
+    },
+    "cropRecognizability": {
+      "target": "Rice and jute read as slender upright tufts; tomato, brinjal, and chili read as stem, foliage, and fruit impressions; potato reads as low clustered foliage.",
+      "blockingFailures": [
+        "all crop models share one silhouette",
+        "instances extend outside the polygon footprint",
+        "random placement changes between openings of the same plot"
+      ]
+    },
+    "interaction": {
+      "target": "Hover tilt, orbit drag, touch rotation and zoom, keyboard controls, idle rotation, hotspot tab activation, reduced motion, focus return, and reversible metric actions all work without competing transforms.",
+      "blockingFailures": [
+        "hover tilt continues during OrbitControls drag",
+        "closing leaves animation or listeners running",
+        "a data label intercepts pointer input",
+        "the dialog has no always-visible close control"
+      ]
+    },
+    "performance": {
+      "target": "Stay within the declared geometry, instance, and DPR budgets; use instancing for crop repetition; render only while the dialog is open and visible.",
+      "blockingFailures": [
+        "desktop exceeds 45000 rendered triangles",
+        "lite exceeds 18000 rendered triangles",
+        "crop plant count exceeds the active mode cap",
+        "requestAnimationFrame continues after close"
+      ]
+    }
+  },
+  "componentHierarchy": {
+    "id": "root",
+    "role": "whole-object pivot and runtime metadata owner",
+    "topology": "THREE.Group",
+    "geometryStrategy": "No geometry; owns hover, idle, and bob transforms.",
+    "pivot": "centroid at the vertical middle of the island",
+    "children": [
+      {
+        "id": "island",
+        "role": "floating land assembly",
+        "topology": "THREE.Group",
+        "geometryStrategy": "Container for independently addressable macro components.",
+        "pivot": "plot centroid",
+        "children": [
+          {
+            "id": "topPlate",
+            "role": "cultivated top surface",
+            "topology": "closed beveled shape extrusion",
+            "geometryStrategy": "THREE.Shape from the normalized GeoJSON outer ring, then shallow THREE.ExtrudeGeometry rotated onto XZ.",
+            "material": "top-soil",
+            "pivot": "plot centroid at top elevation"
+          },
+          {
+            "id": "soilLayers",
+            "role": "readable soil profile",
+            "topology": "three separate closed shape extrusions under stable Group pivots",
+            "geometryStrategy": "Reuse the normalized plot Shape for three contiguous shallow bands; animate pivot offsets rather than editing vertices.",
+            "materials": [
+              "soil-upper",
+              "soil-middle",
+              "soil-lower"
+            ],
+            "pivot": "one centroid pivot per stratum",
+            "action": "soil-explode-reversible"
+          },
+          {
+            "id": "underside",
+            "role": "faceted floating rock mass",
+            "topology": "low-segment closed cone with flat normals",
+            "geometryStrategy": "THREE.ConeGeometry scaled to the footprint aspect ratio and inverted so its broad face meets the lowest soil band.",
+            "material": "underside-moisture",
+            "pivot": "centre of rock mass"
+          },
+          {
+            "id": "crops",
+            "role": "crop-specific repeated planting",
+            "topology": "one or more low-poly THREE.InstancedMesh batches",
+            "geometryStrategy": "Deterministic points are rejection-sampled inside the normalized polygon bounding box. Geometry profile is selected by crop.model.",
+            "material": "crop-health",
+            "pivot": "plot centroid at top elevation",
+            "action": "crop-emphasis-reversible"
+          },
+          {
+            "id": "hotspots",
+            "role": "semantic interaction and DOM-label anchors",
+            "topology": "THREE.Group containing low-poly pick meshes and named Object3D anchors",
+            "geometryStrategy": "Small visible spheres provide forgiving raycast targets; non-rendered child anchors project to DOM glass labels.",
+            "material": "hotspot",
+            "pivot": "per-hotspot local surface position"
+          }
+        ]
+      }
+    ]
+  },
+  "cropGeometryProfiles": {
+    "rice": "short narrow faceted tuft",
+    "jute": "tall narrow faceted stalk",
+    "tomato": "stem, low-poly foliage mass, and round fruit accent",
+    "brinjal": "stem, broad low-poly foliage mass, and elongated fruit accent",
+    "chili": "stem, narrow foliage mass, and tapered fruit accent",
+    "potato": "low clustered faceted foliage"
+  },
+  "materials": [
+    {
+      "id": "top-soil",
+      "type": "MeshStandardMaterial",
+      "albedo": "muted cultivated green",
+      "roughness": 0.88,
+      "metalness": 0,
+      "localResponse": "beveled rim catches the directional key"
+    },
+    {
+      "id": "soil-upper",
+      "type": "MeshStandardMaterial",
+      "albedo": "warm umber",
+      "roughness": 0.94,
+      "metalness": 0
+    },
+    {
+      "id": "soil-middle",
+      "type": "MeshStandardMaterial",
+      "albedo": "muted terracotta",
+      "roughness": 0.96,
+      "metalness": 0
+    },
+    {
+      "id": "soil-lower",
+      "type": "MeshStandardMaterial",
+      "albedo": "deep mineral brown",
+      "roughness": 0.98,
+      "metalness": 0
+    },
+    {
+      "id": "underside-moisture",
+      "type": "MeshStandardMaterial",
+      "albedo": "continuous amber-to-blue interpolation from soil.moisture",
+      "roughness": 0.72,
+      "metalness": 0.04,
+      "normalResponse": "flat vertex normals expose facets"
+    },
+    {
+      "id": "crop-health",
+      "type": "MeshStandardMaterial",
+      "albedo": "crop.color shifted toward amber/red as plot score falls",
+      "roughness": 0.76,
+      "metalness": 0,
+      "localResponse": "subtle emissive lift while Crop Metrics is active"
+    },
+    {
+      "id": "hotspot",
+      "type": "MeshStandardMaterial",
+      "albedo": "off-white and lime",
+      "roughness": 0.32,
+      "metalness": 0,
+      "localResponse": "small emissive cue without bloom or postprocessing"
+    }
+  ],
+  "lighting": {
+    "hemisphere": "warm cream sky and cool sage ground fill",
+    "directional": "soft upper-left key with bounded desktop shadow map",
+    "contactShadow": "layered translucent ellipses beneath the island; no postprocessing",
+    "toneMapping": "ACES filmic with sRGB output",
+    "background": "transparent canvas over the CSS sage/cream gradient"
+  },
+  "pivots": [
+    {
+      "id": "root-pivot",
+      "component": "root",
+      "action": "hover yaw, hover pitch, idle yaw, and reduced-motion-safe bob"
+    },
+    {
+      "id": "soil-layer-0-pivot",
+      "component": "soilLayers/upper",
+      "action": "fixed reference band"
+    },
+    {
+      "id": "soil-layer-1-pivot",
+      "component": "soilLayers/middle",
+      "action": "small downward separation"
+    },
+    {
+      "id": "soil-layer-2-pivot",
+      "component": "soilLayers/lower",
+      "action": "larger downward separation"
+    },
+    {
+      "id": "crops-pivot",
+      "component": "crops",
+      "action": "small scale and emissive emphasis"
+    }
+  ],
+  "actionAnchors": [
+    {
+      "id": "anchor-moisture",
+      "component": "hotspots",
+      "data": "plot.soil.moisture",
+      "tab": "soil"
+    },
+    {
+      "id": "anchor-nitrogen",
+      "component": "hotspots",
+      "data": "plot.soil.n",
+      "tab": "soil"
+    },
+    {
+      "id": "anchor-health",
+      "component": "hotspots",
+      "data": "plot score",
+      "tab": "crop"
+    }
+  ],
+  "clickTargets": [
+    {
+      "id": "hotspot-moisture",
+      "minimumWorldRadius": 0.18,
+      "activates": "soil"
+    },
+    {
+      "id": "hotspot-nitrogen",
+      "minimumWorldRadius": 0.18,
+      "activates": "soil"
+    },
+    {
+      "id": "hotspot-health",
+      "minimumWorldRadius": 0.18,
+      "activates": "crop"
+    }
+  ],
+  "performanceBudget": {
+    "desktop": {
+      "maxTriangles": 45000,
+      "maxCropInstances": 140,
+      "maxDevicePixelRatio": 2,
+      "shadows": "one 1024px directional shadow map"
+    },
+    "lite": {
+      "maxTriangles": 18000,
+      "maxCropInstances": 60,
+      "maxDevicePixelRatio": 1,
+      "shadows": "disabled"
+    },
+    "rendering": "requestAnimationFrame exists only while the dialog is open and the document is visible",
+    "externalAssets": 0
+  }
+}

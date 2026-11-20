@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>আমার খামার — AgriSphere Farm Dashboard</title>
+  <meta name="description" content="AgriSphere AI smart farm dashboard — plots, soil, weather, tasks and farm performance at a glance." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous" />
+  <link rel="stylesheet" href="dashboard/tokens.css" />
+  <link rel="stylesheet" href="dashboard/dashboard.css" />
+  <link rel="stylesheet" href="dashboard/ui.css" />
+  <link rel="stylesheet" href="dashboard/hero.css" />
+  <link rel="stylesheet" href="dashboard/kpi.css" />
+  <link rel="stylesheet" href="dashboard/weather.css" />
+  <link rel="stylesheet" href="dashboard/soil.css" />
+  <link rel="stylesheet" href="dashboard/performance.css" />
+  <link rel="stylesheet" href="dashboard/tasks.css" />
+  <link rel="stylesheet" href="dashboard/map.css" />
+  <link rel="stylesheet" href="dashboard/plot3d.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-grid">Skip to dashboard content</a>
+
+  <div class="sf-root" id="sf-root">
+    <div class="sf-shell">
+
+      <!-- Left rail (desktop) / injected by shell.js -->
+      <nav class="sf-rail" id="rail" aria-label="Primary"></nav>
+
+      <!-- Main content -->
+      <main class="sf-main" id="main-grid" tabindex="-1">
+        <div class="sf-grid">
+
+          <!-- Row A -->
+          <section class="sf-cell sf-cell--hero" id="hero" aria-labelledby="hero-title"></section>
+          <section class="sf-cell sf-cell--weather" id="weather-card" aria-labelledby="weather-title"></section>
+
+          <!-- Row B -->
+          <section class="sf-cell sf-cell--kpi" id="kpi-row" aria-label="Key performance indicators"></section>
+
+          <!-- Row C -->
+          <section class="sf-cell sf-cell--map" id="map-card" aria-labelledby="map-title"></section>
+          <div class="sf-cell sf-cell--side">
+            <section class="sf-cell sf-cell--soil" id="soil-card" aria-labelledby="soil-title"></section>
+            <section class="sf-cell sf-cell--perf" id="performance-card" aria-labelledby="perf-title"></section>
+          </div>
+          <section class="sf-cell sf-cell--tasks" id="task-strip" aria-labelledby="tasks-title"></section>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Bottom nav (mobile) / injected by shell.js -->
+    <nav class="sf-bottomnav" id="bottom-nav" aria-label="Primary"></nav>
+  </div>
+
+  <!-- Live regions -->
+  <div class="sf-toasts" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
+  <script type="module" src="dashboard/main.js"></script>
+</body>
+</html>

@@ -7,7 +7,8 @@
     "dev": "uvicorn backend.app.main:app --reload --port 8000",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
-    "build": "echo 'Static assets ready in frontend/'"
+    "build": "echo 'Static assets ready in frontend/'",
+    "test:dashboard": "node --test public/dashboard/tests/*.test.mjs"
   },
   "dependencies": {
     "convex": "^1.17.4"

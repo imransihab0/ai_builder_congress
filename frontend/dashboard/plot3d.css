@@ -1,0 +1,858 @@
+.sf-plot3d {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  color: #172018;
+  background:
+    radial-gradient(circle at 52% 34%, rgba(255, 255, 255, 0.94) 0 17%, transparent 48%),
+    linear-gradient(135deg, #edf2e8 0%, #fbf8ed 52%, #dbe7d7 100%);
+  font-family: var(--sf-font, system-ui, sans-serif);
+}
+
+.sf-plot3d::backdrop {
+  background: rgba(25, 35, 27, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.sf-plot3d[open] {
+  display: block;
+}
+
+.sf-plot3d__surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  isolation: isolate;
+}
+
+.sf-plot3d__topbar {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: max(16px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) 12px max(22px, env(safe-area-inset-left));
+}
+
+.sf-plot3d__nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.sf-plot3d__back {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid rgba(23, 32, 24, 0.16);
+  border-radius: 999px;
+  color: #f7faef;
+  background: #172018;
+  box-shadow: 0 10px 24px -16px rgba(23, 32, 24, 0.65);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.sf-plot3d__back:hover {
+  background: #29452d;
+  box-shadow: 0 14px 28px -16px rgba(23, 32, 24, 0.72);
+  transform: translateY(-1px);
+}
+
+.sf-plot3d__back svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.sf-plot3d__breadcrumb {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: #445246;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.sf-plot3d__breadcrumb svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: #758077;
+}
+
+.sf-plot3d__plot-name {
+  overflow: hidden;
+  color: #172018;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-plot3d__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sf-plot3d__chip {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid rgba(23, 32, 24, 0.13);
+  border-radius: 999px;
+  color: #26362a;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.2;
+  backdrop-filter: blur(12px);
+}
+
+.sf-plot3d__chip[hidden] {
+  display: none;
+}
+
+.sf-plot3d__chip--level {
+  border-color: #172018;
+  color: #f8faef;
+  background: #172018;
+}
+
+.sf-plot3d__chip--lite::before,
+.sf-plot3d__chip--approx::before {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #55705d;
+  content: "";
+}
+
+.sf-plot3d__stage {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(420px, 3fr) minmax(220px, 0.9fr);
+  gap: clamp(12px, 2vw, 28px);
+  min-height: 0;
+  padding: 4px clamp(20px, 3vw, 48px) 12px;
+}
+
+.sf-plot3d__score,
+.sf-plot3d__factors,
+.sf-plot3d__metrics {
+  border: 1px solid rgba(23, 32, 24, 0.1);
+  background: rgba(250, 252, 246, 0.58);
+  box-shadow: 0 22px 50px -38px rgba(23, 32, 24, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+}
+
+.sf-plot3d__score {
+  display: grid;
+  grid-template-rows: auto auto minmax(160px, 1fr);
+  align-self: center;
+  min-height: min(410px, 55vh);
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: 28px;
+}
+
+.sf-plot3d__eyebrow {
+  margin: 0;
+  color: #465749;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.sf-plot3d__score-value {
+  margin: 6px 0 16px;
+  color: #172018;
+  font-family: var(--sf-font-num, var(--sf-font, system-ui, sans-serif));
+  font-size: clamp(2.5rem, 4.5vw, 4.75rem);
+  font-weight: 800;
+  letter-spacing: -0.065em;
+  line-height: 0.95;
+}
+
+.sf-plot3d__scale {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 170px;
+  gap: 10px;
+}
+
+.sf-plot3d__scale-track {
+  position: relative;
+  width: 10px;
+  height: 100%;
+  min-height: 170px;
+  justify-self: center;
+  overflow: visible;
+  border: 1px solid rgba(23, 32, 24, 0.12);
+  border-radius: 999px;
+  background: linear-gradient(to top, #d96b55 0 45%, #d7a335 45% 70%, #507b45 70% 100%);
+}
+
+.sf-plot3d__scale-fill {
+  position: absolute;
+  inset: auto -1px -1px;
+  height: calc(var(--score, 0) * 1%);
+  border: 2px solid #172018;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.sf-plot3d__scale-marker {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: calc(var(--score, 0) * 1%);
+  width: 23px;
+  height: 23px;
+  border: 5px solid #f7f9f0;
+  border-radius: 50%;
+  background: #172018;
+  box-shadow: 0 3px 10px rgba(23, 32, 24, 0.28);
+  transform: translate(-50%, 50%);
+}
+
+.sf-plot3d__scale-copy {
+  position: relative;
+  min-width: 0;
+  color: #425044;
+  font-family: var(--sf-font-num, var(--sf-font, system-ui, sans-serif));
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.sf-plot3d__scale-max,
+.sf-plot3d__scale-min {
+  position: absolute;
+  left: 0;
+}
+
+.sf-plot3d__scale-max {
+  top: -2px;
+}
+
+.sf-plot3d__scale-min {
+  bottom: -2px;
+}
+
+.sf-plot3d__average {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--average, 0) * 1%);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #39483c;
+  line-height: 1.2;
+  transform: translateY(50%);
+}
+
+.sf-plot3d__average::before {
+  width: 18px;
+  flex: none;
+  border-top: 1px dashed currentColor;
+  content: "";
+}
+
+.sf-plot3d__viewer {
+  position: relative;
+  min-width: 0;
+  min-height: 300px;
+}
+
+.sf-plot3d__canvas-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: 36px;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.sf-plot3d__canvas-shell::after {
+  position: absolute;
+  z-index: -1;
+  right: 12%;
+  bottom: 5%;
+  left: 12%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(69, 91, 70, 0.12);
+  filter: blur(20px);
+  content: "";
+  transform: scaleY(0.42);
+}
+
+.sf-plot3d__canvas-shell:focus-visible {
+  outline: 3px solid #355f3b;
+  outline-offset: 3px;
+}
+
+.sf-plot3d__canvas-host,
+.sf-plot3d__canvas-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sf-plot3d__canvas-shell[data-hotspot="true"] {
+  cursor: pointer;
+}
+
+.sf-plot3d__label {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  max-width: min(160px, 42%);
+  align-items: baseline;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid rgba(23, 32, 24, 0.12);
+  border-radius: 999px;
+  color: #1f3023;
+  background: rgba(250, 252, 246, 0.8);
+  box-shadow: 0 10px 24px -18px rgba(23, 32, 24, 0.7);
+  font-size: 0.75rem;
+  font-weight: 680;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  will-change: transform;
+}
+
+.sf-plot3d__label strong {
+  color: #172018;
+  font-family: var(--sf-font-num, var(--sf-font, system-ui, sans-serif));
+  font-weight: 800;
+}
+
+.sf-plot3d__label[hidden] {
+  display: none;
+}
+
+.sf-plot3d__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.72), transparent 58%);
+}
+
+.sf-plot3d__fallback[hidden] {
+  display: none;
+}
+
+.sf-plot3d__fallback-inner {
+  display: grid;
+  width: min(100%, 520px);
+  place-items: center;
+  text-align: center;
+}
+
+.sf-plot3d__fallback-art {
+  width: min(100%, 430px);
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 30px 24px rgba(49, 69, 51, 0.17));
+}
+
+.sf-plot3d__fallback-title {
+  margin: 2px 0 4px;
+  color: #172018;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.sf-plot3d__fallback-copy {
+  max-width: 42ch;
+  margin: 0;
+  color: #445347;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.sf-plot3d__factors {
+  display: grid;
+  align-self: center;
+  gap: 18px;
+  max-height: 100%;
+  padding: clamp(14px, 1.8vw, 22px);
+  overflow: auto;
+  border-radius: 28px;
+}
+
+.sf-plot3d__factor-group {
+  display: grid;
+  gap: 10px;
+}
+
+.sf-plot3d__factor-heading {
+  margin: 0;
+  color: #3d4d40;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.sf-plot3d__factor-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sf-plot3d__factor {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 9px 4px 4px;
+  border: 1px solid rgba(23, 32, 24, 0.1);
+  border-radius: 999px;
+  color: #29382d;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.sf-plot3d__factor.is-active {
+  border-color: rgba(23, 32, 24, 0.3);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 8px 18px -16px rgba(23, 32, 24, 0.65);
+}
+
+.sf-plot3d__factor.is-inactive {
+  border-style: dashed;
+  color: #58675b;
+}
+
+.sf-plot3d__factor-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  color: #213126;
+  background: #dce9d4;
+}
+
+.sf-plot3d__factor--negative .sf-plot3d__factor-icon {
+  color: #52261f;
+  background: #f1d4cc;
+}
+
+.sf-plot3d__factor.is-inactive .sf-plot3d__factor-icon {
+  color: #657168;
+  background: #e8ebe5;
+  opacity: 0.68;
+}
+
+.sf-plot3d__factor-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.sf-plot3d__factor-name {
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.sf-plot3d__bottom {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+  align-items: stretch;
+  gap: 12px;
+  padding: 0 clamp(20px, 3vw, 48px) max(18px, env(safe-area-inset-bottom));
+}
+
+.sf-plot3d__metrics {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 24px;
+}
+
+.sf-plot3d__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.sf-plot3d__tab {
+  min-width: 118px;
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid rgba(23, 32, 24, 0.14);
+  border-radius: 999px;
+  color: #35463a;
+  background: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.sf-plot3d__tab:hover {
+  transform: translateY(-1px);
+}
+
+.sf-plot3d__tab[aria-selected="true"] {
+  border-color: #172018;
+  color: #f7faef;
+  background: #172018;
+}
+
+.sf-plot3d__panel {
+  min-width: 0;
+}
+
+.sf-plot3d__metric-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(64px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.sf-plot3d__metric {
+  min-width: 0;
+  padding: 7px 10px;
+  border-left: 1px solid rgba(23, 32, 24, 0.12);
+}
+
+.sf-plot3d__metric:first-child {
+  border-left: 0;
+}
+
+.sf-plot3d__metric dt {
+  overflow: hidden;
+  margin: 0 0 2px;
+  color: #526157;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-plot3d__metric dd {
+  overflow: hidden;
+  margin: 0;
+  color: #172018;
+  font-family: var(--sf-font-num, var(--sf-font, system-ui, sans-serif));
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-plot3d__banner {
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid rgba(23, 32, 24, 0.14);
+  border-radius: 24px;
+  color: #f8faef;
+  background: #294b30;
+  box-shadow: 0 15px 30px -24px rgba(23, 32, 24, 0.8);
+  font-size: 0.875rem;
+  font-weight: 720;
+  line-height: 1.45;
+}
+
+.sf-plot3d__banner::before {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+  content: "";
+}
+
+.sf-plot3d__banner[data-band="watch"] {
+  color: #241d0c;
+  background: #e3b84f;
+}
+
+.sf-plot3d__banner[data-band="attention"],
+.sf-plot3d__banner[data-band="needs-attention"] {
+  color: #fff8f5;
+  background: #98483e;
+}
+
+.sf-plot3d__sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.sf-plot3d :focus-visible {
+  outline: 3px solid #355f3b;
+  outline-offset: 3px;
+}
+
+.sf-plot3d__back:focus-visible,
+.sf-plot3d__tab[aria-selected="true"]:focus-visible {
+  outline-color: #f2c94c;
+}
+
+@media (max-width: 1080px) {
+  .sf-plot3d__stage {
+    grid-template-columns: minmax(140px, 0.65fr) minmax(360px, 2.4fr) minmax(190px, 0.8fr);
+    padding-inline: 18px;
+  }
+
+  .sf-plot3d__bottom {
+    grid-template-columns: 1fr;
+    padding-inline: 18px;
+  }
+
+  .sf-plot3d__banner {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 820px) {
+  .sf-plot3d {
+    overflow-y: auto;
+  }
+
+  .sf-plot3d__surface {
+    display: block;
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .sf-plot3d__topbar {
+    position: sticky;
+    top: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+    background: rgba(239, 244, 234, 0.9);
+    box-shadow: 0 8px 24px -22px rgba(23, 32, 24, 0.8);
+    backdrop-filter: blur(14px);
+  }
+
+  .sf-plot3d__chips {
+    justify-content: flex-start;
+    padding-left: 52px;
+  }
+
+  .sf-plot3d__stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 10px 14px 14px;
+  }
+
+  .sf-plot3d__score {
+    grid-template-columns: minmax(0, 1fr) 140px;
+    grid-template-rows: auto 1fr;
+    min-height: 190px;
+    align-self: stretch;
+    border-radius: 24px;
+  }
+
+  .sf-plot3d__score .sf-plot3d__eyebrow {
+    grid-column: 1;
+  }
+
+  .sf-plot3d__score-value {
+    grid-column: 1;
+    align-self: center;
+    margin: 6px 12px 0 0;
+  }
+
+  .sf-plot3d__scale {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .sf-plot3d__viewer,
+  .sf-plot3d__canvas-shell {
+    min-height: min(64vh, 500px);
+  }
+
+  .sf-plot3d__factors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-self: stretch;
+    overflow: visible;
+    border-radius: 24px;
+  }
+
+  .sf-plot3d__bottom {
+    gap: 10px;
+    padding: 0 14px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .sf-plot3d__metrics {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border-radius: 24px;
+  }
+
+  .sf-plot3d__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sf-plot3d__tab {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .sf-plot3d__nav {
+    gap: 8px;
+  }
+
+  .sf-plot3d__back {
+    width: 44px;
+    padding: 0;
+  }
+
+  .sf-plot3d__back-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .sf-plot3d__chips {
+    padding-left: 0;
+  }
+
+  .sf-plot3d__score {
+    grid-template-columns: minmax(0, 1fr) 118px;
+    padding: 16px;
+  }
+
+  .sf-plot3d__score-value {
+    font-size: clamp(2.75rem, 15vw, 4rem);
+  }
+
+  .sf-plot3d__viewer,
+  .sf-plot3d__canvas-shell {
+    min-height: 360px;
+  }
+
+  .sf-plot3d__canvas-shell {
+    border-radius: 26px;
+  }
+
+  .sf-plot3d__factors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sf-plot3d__factor-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sf-plot3d__factor {
+    grid-template-columns: 40px minmax(0, 1fr);
+    min-height: 48px;
+    gap: 7px;
+    padding-right: 7px;
+  }
+
+  .sf-plot3d__factor-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sf-plot3d__metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sf-plot3d__metric,
+  .sf-plot3d__metric:first-child {
+    border-left: 0;
+    border-top: 1px solid rgba(23, 32, 24, 0.12);
+  }
+
+  .sf-plot3d__metric:first-child,
+  .sf-plot3d__metric:nth-child(2) {
+    border-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-plot3d *,
+  .sf-plot3d *::before,
+  .sf-plot3d *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .sf-plot3d__score,
+  .sf-plot3d__factors,
+  .sf-plot3d__metrics,
+  .sf-plot3d__factor,
+  .sf-plot3d__chip,
+  .sf-plot3d__label {
+    border: 1px solid CanvasText;
+  }
+
+  .sf-plot3d__factor.is-active,
+  .sf-plot3d__tab[aria-selected="true"] {
+    outline: 3px solid Highlight;
+  }
+}

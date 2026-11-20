@@ -1,0 +1,120 @@
+.sf-cell--soil {
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 90% 0, rgba(166, 226, 46, 0.16), transparent 35%),
+    linear-gradient(145deg, #315E38 0%, #1D3D29 100%);
+  color: #F5F8F1;
+}
+
+.sf-soil {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.sf-soil .sf-card-title { color: #FFFFFF; }
+.sf-soil .sf-card-subtitle { color: #D7E1D2; }
+
+.sf-soil__leaf {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 58% 42%;
+  background: rgba(166, 226, 46, 0.18);
+  color: var(--sf-accent);
+}
+
+.sf-soil__leaf .sf-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.sf-soil__rows {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.sf-soil__row {
+  min-width: 0;
+}
+
+.sf-soil__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 0.75rem;
+}
+
+.sf-soil__label > span {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.sf-soil__label b {
+  color: var(--sf-accent);
+  font-family: var(--sf-font-num);
+  font-size: 0.75rem;
+}
+
+.sf-soil__label small {
+  overflow: hidden;
+  color: #D4E0D0;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-soil__label strong {
+  color: #FFFFFF;
+  font-family: var(--sf-font-num);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.sf-soil__track {
+  position: relative;
+  height: 8px;
+  border-radius: var(--sf-radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sf-soil__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--sf-fill);
+  border-radius: inherit;
+  background: var(--sf-accent);
+  transition: width 500ms cubic-bezier(.2,.8,.2,1);
+}
+
+.sf-soil__fill--low { background: var(--sf-warn); }
+.sf-soil__fill--danger { background: var(--sf-danger); }
+
+.sf-soil__target {
+  position: absolute;
+  left: var(--sf-target);
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  border-radius: 2px;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.35);
+  transform: translateX(-1px);
+}
+
+.sf-soil .sf-empty {
+  min-height: 80px;
+  color: #D7E1D2;
+}
+
+@media (max-width: 1023px) {
+  .sf-cell--soil { min-height: 270px; }
+  .sf-soil__rows { gap: 15px; }
+  .sf-soil__track { height: 10px; }
+}
