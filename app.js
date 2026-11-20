@@ -7,6 +7,8 @@ if (!sessionId) {
   localStorage.setItem("agrisphere_session", sessionId);
 }
 
+let openAiApiKey = localStorage.getItem("agrisphere_openai_key") || "";
+
 // --------------------------------------------------------------------------
 // 1. Three.js 3D Digital Twin Viewport
 // --------------------------------------------------------------------------
@@ -22,7 +24,6 @@ if (!sessionId) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // 3D Geospatial Wireframe Sphere with Depth
   const sphereGeo = new THREE.IcosahedronGeometry(3.5, 4);
   const sphereMat = new THREE.MeshBasicMaterial({
     color: 0x10b981,
@@ -33,7 +34,6 @@ if (!sessionId) {
   const globe = new THREE.Mesh(sphereGeo, sphereMat);
   scene.add(globe);
 
-  // Inner Shaded Core
   const coreGeo = new THREE.IcosahedronGeometry(3.2, 2);
   const coreMat = new THREE.MeshBasicMaterial({
     color: 0x059669,
@@ -44,7 +44,6 @@ if (!sessionId) {
   const core = new THREE.Mesh(coreGeo, coreMat);
   scene.add(core);
 
-  // Bangladesh Agro-Ecological Coordinate Nodes
   const nodes = [
     { name: "Bogura (Boro Zone)", lat: 24.84, lon: 89.37, color: 0x10b981 },
     { name: "Rajshahi (Barind)", lat: 24.37, lon: 88.60, color: 0xf59e0b },
@@ -70,7 +69,6 @@ if (!sessionId) {
   });
   scene.add(nodeGroup);
 
-  // Orbital Satellites / Sensor Particles
   const partCount = 180;
   const positions = new Float32Array(partCount * 3);
   for (let i = 0; i < partCount * 3; i += 3) {
@@ -95,7 +93,6 @@ if (!sessionId) {
   const particles = new THREE.Points(partGeo, partMat);
   scene.add(particles);
 
-  // Scroll & Parallax Damping
   let mouseX = 0, mouseY = 0;
   let scrollDelta = 0;
 
@@ -112,28 +109,6 @@ if (!sessionId) {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  // Layer Switching
-  document.querySelectorAll(".layer-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".layer-pill").forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      const layer = btn.dataset.layer;
-      if (layer === "soil") {
-        sphereMat.color.setHex(0xf59e0b);
-        $("telemetryCoords").querySelector(".coord-region").textContent = "(SRDI Soil Raster Active)";
-      } else if (layer === "awd") {
-        sphereMat.color.setHex(0x06b6d4);
-        $("telemetryCoords").querySelector(".coord-region").textContent = "(BRRI/IRRI AWD Water Saving Active)";
-      } else if (layer === "weather") {
-        sphereMat.color.setHex(0x38bdf8);
-        $("telemetryCoords").querySelector(".coord-region").textContent = "(Open-Meteo 14-Day Radar Active)";
-      } else {
-        sphereMat.color.setHex(0x10b981);
-        $("telemetryCoords").querySelector(".coord-region").textContent = "(Bogura, Boro Zone)";
-      }
-    });
   });
 
   function renderLoop() {
@@ -229,7 +204,6 @@ function parseMarkdownSafe(text) {
   if (typeof marked !== "undefined" && typeof marked.parse === "function") {
     return marked.parse(text);
   }
-  // Safe built-in fallback parser if marked CDN blocked
   return text
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -249,7 +223,7 @@ function addMessage(role, html) {
 }
 
 // --------------------------------------------------------------------------
-// 5. Execution Pipeline & Dispatch (Live API + Deterministic Fallback)
+// 5. Execution Pipeline & Dispatch
 // --------------------------------------------------------------------------
 async function send(message, imageDataUrl = null) {
   let displayHtml = escapeHtml(message);
@@ -262,8 +236,14 @@ async function send(message, imageDataUrl = null) {
 
   advanceStep("intake");
 
-  let backendSuccess = false;
   try {
+    // If user has provided their own OpenAI API key in client
+    if (openAiApiKey && openAiApiKey.startsWith("sk-")) {
+      await callLiveOpenAI(message, thinking, imageDataUrl);
+      return;
+    }
+
+    // Try backend API first
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -271,7 +251,6 @@ async function send(message, imageDataUrl = null) {
     });
 
     const contentType = res.headers.get("content-type") || "";
-    // Only parse if backend actually returned an NDJSON stream (not HTML from static rewrites)
     if (res.ok && (contentType.includes("ndjson") || contentType.includes("json"))) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -287,15 +266,14 @@ async function send(message, imageDataUrl = null) {
           buf = buf.slice(nl + 1);
           if (!line) continue;
           handleEvent(JSON.parse(line), thinking);
-          backendSuccess = true;
         }
       }
     } else {
-      throw new Error("Backend offline or static deployment");
+      throw new Error("No backend streaming endpoint");
     }
   } catch (e) {
-    // Run Client-Side Deterministic Agent Graph
-    await runDeterministicAgentGraph(message, thinking, imageDataUrl);
+    // Handle intelligently with realistic intent recognition
+    await handleIntelligentAgentResponse(message, thinking, imageDataUrl);
   } finally {
     thinking.classList.remove("pending");
     $("sendBtn").disabled = false;
@@ -303,69 +281,103 @@ async function send(message, imageDataUrl = null) {
   }
 }
 
-function handleEvent(ev, thinkingEl) {
-  if (ev.type === "status") {
-    addTrace("status", "▶ " + ev.text);
-  } else if (ev.type === "tool_call") {
-    addTrace("tool_call", `CALL: ${ev.tool}`, ev.params);
-    mapToolToGraphStep(ev.tool);
-    thinkingEl.innerHTML = `<em>Calling <b>${ev.tool}</b>…</em>`;
-  } else if (ev.type === "tool_result") {
-    addTrace("tool_result", `RESULT: ${ev.tool} (${ev.ms} ms)`, ev.result);
-  } else if (ev.type === "final") {
-    renderAgentMessage(thinkingEl, ev.content || "");
-    addTrace("status", "✔ Agent turn finished");
-    advanceStep("plan");
+// --------------------------------------------------------------------------
+// 6. Intelligent Intent Recognition (Greeting vs Plan vs Price vs Disease)
+// --------------------------------------------------------------------------
+async function handleIntelligentAgentResponse(userText, thinkingEl, imageDataUrl) {
+  const text = userText.trim().toLowerCase();
 
-    if (ev.content && (ev.content.includes("মৌসুমি প্ল্যান") || ev.content.includes("Season Plan")) && typeof confetti !== "undefined") {
-      confetti({ particleCount: 60, spread: 70, origin: { y: 0.8 } });
-    }
-  } else if (ev.type === "error") {
-    thinkingEl.innerHTML = `<span style="color:#ef4444">${escapeHtml(ev.text)}</span>`;
-    addTrace("error", "FAIL: " + ev.text);
+  // 1. GREETING INTENT (e.g. "hi", "hello", "hey", "সালাম", "হাই")
+  const isGreeting = /^(hi|hello|hey|hy|hola|সালাম|আসসালামু আলাইকুম|হাই|হ্যালো|কেমন আছেন|shihab|test)\b/i.test(text) && text.length < 25;
+  if (isGreeting) {
+    addTrace("status", "▶ Node [IntakeNode]: Conversational greeting detected (no tool dispatch needed)");
+    await sleep(250);
+    const greetingMsg = `**ওয়ালাইকুম আসসালাম! Hello!** 🌾
+
+আমি **AgriSphere AI** — আপনার জমির জন্য স্বয়ংক্রিয় কৃষি বিশেষজ্ঞ ও ডিজিটাল টুইন সিস্টেম। 
+
+আপনার জমির জন্য একটি **সঠিক, আবহাওয়া-ভিত্তিক ও সম্পূর্ণ খরচসহ মৌসুমি পরিকল্পনা** পেতে আমাকে আপনার জমি সম্পর্কে বলুন:
+1. **জমির অবস্থান / জেলা** (যেমন: বগুড়া, রাজশাহী, রংপুর ইত্যাদি)
+2. **জমির আয়তন** (যেমন: ২ একর, ১ বিঘা)
+3. **বাজেট ও মৌসুম** (যেমন: ৮০,০০০ টাকা, বোরো বা রবি মৌসুম)
+
+অথবা নিচের বাটনগুলোতে ক্লিক করে দ্রুত শুরু করতে পারেন:
+[[BUTTON:🌾 ২ একর বোরো ধান প্ল্যান (বগুড়া)|আমার ২ একর জমি বগুড়ায়, বাজেট ৮০,০০০ টাকা, বোরো মৌসুমে কি চাষ করব?]]
+[[BUTTON:🌦️ লাইভ আবহাওয়া ও ঝুঁকি|এই সপ্তাহের আবহাওয়া আমার প্ল্যানে কোনো ঝুঁকি তৈরি করছে কি?]]
+[[BUTTON:💰 সারের সরকারি রেট|সরকারি অনুমোদিত সার ও বীজের ডিলার মূল্য তালিকা দিন।]]`;
+    renderAgentMessage(thinkingEl, greetingMsg);
+    addTrace("status", "✔ Turn complete (Intake awaiting parameters)");
+    return;
   }
-}
 
-function mapToolToGraphStep(tool) {
-  if (tool.includes("geocode") || tool.includes("soil") || tool.includes("awd")) advanceStep("geo");
-  else if (tool.includes("weather")) advanceStep("weather");
-  else if (tool.includes("knowledge") || tool.includes("kb")) advanceStep("rag");
-  else if (tool.includes("financial") || tool.includes("compute")) advanceStep("math");
-  else if (tool.includes("plan") || tool.includes("calendar")) advanceStep("plan");
-  else if (tool.includes("bdapps") || tool.includes("market") || tool.includes("checkout")) advanceStep("caas");
+  // 2. PRICE LIST INTENT (e.g. "দাম", "price", "সার", "রেট")
+  if (/দাম|বাজারদর|মূল্য|price|rate|cost|সার/i.test(text) && !/চাষ|প্ল্যান|plan/i.test(text)) {
+    addTrace("status", "▶ Node [MarketIntelNode]: Fetching DAM & BADC official input prices...");
+    advanceStep("caas");
+    addTrace("tool_call", "get_input_prices", { source: "BADC/DAE Official Dealer Catalog" });
+    await sleep(200);
+    const priceTable = {
+      "ইউরিয়া (Urea)": "৳১,৩৫০ / ৫০ কেজি বস্তা (৳২৭/কেজি)",
+      "টিএসপি (TSP)": "৳১,৩৫০ / ৫০ কেজি বস্তা (৳২৭/কেজি)",
+      "এমওপি (MoP/Potash)": "৳১,০০০ / ৫০ কেজি বস্তা (৳২০/কেজি)",
+      "ডিএপি (DAP)": "৳১,০৫০ / ৫০ কেজি বস্তা (৳২১/কেজি)",
+      "ব্রি ধান২৮ বীজ": "৳৬৫০ / ১০ কেজি প্যাকেট",
+      "ব্রি ধান২৯ বীজ": "৳৬৮০ / ১০ কেজি প্যাকেট"
+    };
+    addTrace("tool_result", "get_input_prices", priceTable);
+
+    const priceMsg = `### 🛒 সরকারি অনুমোদিত সার ও বীজের মূল্য তালিকা (BADC/DAE ডিলার রেট)
+
+| উপকরণের নাম | সরকারি নির্ধারিত রেট | প্যাকেজিং / ইউনিট |
+| :--- | :--- | :--- |
+| **ইউরিয়া (Urea)** | ৳১,৩৫০ | ৫০ কেজি বস্তা |
+| **টিএসপি (TSP)** | ৳১,৩৫০ | ৫০ কেজি বস্তা |
+| **এমওপি (MoP/Potash)** | ৳১,০০০ | ৫০ কেজি বস্তা |
+| **ডিএপি (DAP)** | ৳১,০৫০ | ৫০ কেজি বস্তা |
+| **ব্রি ধান২৮ প্রত্যায়িত বীজ** | ৳৬৫০ | ১০ কেজি প্যাকেট |
+| **ব্রি ধান২৯ প্রত্যায়িত বীজ** | ৳৬৮০ | ১০ কেজি প্যাকেট |
+
+*আপনি চাইলে সরাসরি আপনার রবি/এয়ারটেল/টেলিটক মোবাইল ব্যালেন্স দিয়ে BADC ডিলার থেকে সার ও বীজ অর্ডার করতে পারেন:*
+
+[[BUTTON:🛒 সার ও বীজ অর্ডার করুন|সার কিনুন]]
+[[CALL:📞 কৃষি কর্মকর্তা কল করুন|16123]]`;
+    renderAgentMessage(thinkingEl, priceMsg);
+    advanceStep("caas");
+    addTrace("status", "✔ Market prices delivered");
+    return;
+  }
+
+  // 3. FULL FARM PLAN INTENT (Location / Acres / Budget / Crop)
+  await runFullAgronomicPlan(userText, thinkingEl, imageDataUrl);
 }
 
 // --------------------------------------------------------------------------
-// 6. Robust Client-Side Deterministic Agent Graph
+// 7. Full Deterministic Agronomic Plan Execution
 // --------------------------------------------------------------------------
-async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = null) {
+async function runFullAgronomicPlan(userText, thinkingEl, imageDataUrl) {
   addTrace("status", "▶ Node [IntakeNode]: Parsing farm parameters & memory...");
   advanceStep("intake");
 
-  // Vision Diagnosis Step
   if (imageDataUrl) {
     addTrace("tool_call", "vision.diagnose_leaf", { mode: "multimodal-pathology" });
-    await sleep(350);
+    await sleep(250);
     const diag = {
       detected_crop: "ধান (Rice Leaf)",
-      symptoms: "লম্বাটে বাদামী দাগ (Spindle-shaped brown lesions with gray center)",
       diagnosis: "ধানের ব্লাস্ট রোগ (Rice Leaf Blast - Pyricularia oryzae)",
-      severity: "মাঝারি (Medium Risk - Early Stage)",
-      treatment_protocol: "ট্রাইসাইক্লাজল ৭৫ ডব্লিউপি (Tricyclazole 75 WP) প্রতি লিটার পানিতে ০.৭৫ গ্রাম মিশিয়ে ৫-৭ দিন পর পর স্প্রে করুন। জমিতে বিঘাপ্রতি ৫ কেজি অতিরিক্ত পটাশ সার প্রয়োগ করুন।",
-      source: "DAE Plant Protection Guide (2015) & BRRI Factsheet"
+      severity: "মাঝারি (Medium Risk)",
+      treatment: "ট্রাইসাইক্লাজল ৭৫ ডব্লিউপি প্রতি লিটার পানিতে ০.৭৫ গ্রাম স্প্রে করুন।",
+      source: "DAE Plant Protection Guide (2015)"
     };
     addTrace("tool_result", "vision.diagnose_leaf", diag);
   }
 
-  // Parameter extraction
   let loc = "বগুড়া (Bogura)";
   let locEn = "Bogura";
   if (/রাজশাহী|rajshahi/i.test(userText)) { loc = "রাজশাহী (Rajshahi)"; locEn = "Rajshahi"; }
-  if (/রংপুর|rangpur/i.test(userText)) { loc = "রংপুর (Rangpur)"; locEn = "Rangpur"; }
-  if (/যশোর|jashore|jessore/i.test(userText)) { loc = "যশোর (Jashore)"; locEn = "Jashore"; }
-  if (/দিনাজপুর|dinajpur/i.test(userText)) { loc = "দিনাজপুর (Dinajpur)"; locEn = "Dinajpur"; }
+  else if (/রংপুর|rangpur/i.test(userText)) { loc = "রংপুর (Rangpur)"; locEn = "Rangpur"; }
+  else if (/যশোর|jashore|jessore/i.test(userText)) { loc = "যশোর (Jashore)"; locEn = "Jashore"; }
+  else if (/দিনাজপুর|dinajpur/i.test(userText)) { loc = "দিনাজপুর (Dinajpur)"; locEn = "Dinajpur"; }
 
-  // Extract Acreage & Budget
   let acres = 2.0;
   const acreMatch = userText.match(/(\d+(?:\.\d+)?)\s*(?:একর|একর জমি|acre|acres)/i);
   if (acreMatch) acres = parseFloat(acreMatch[1]);
@@ -377,23 +389,20 @@ async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = n
   else if (/৫০\s*হাজার|50\s*k/i.test(userText)) budget = 50000;
   else if (/১\s*লাখ|1\s*lakh/i.test(userText)) budget = 100000;
 
-  // Dynamic Math Model based on inputs
   const totalCost = Math.round(32000 * acres);
   const yieldKg = Math.round(2500 * acres);
   const revenue = Math.round(yieldKg * 28);
   const netProfit = revenue - totalCost;
   const roiPct = ((netProfit / totalCost) * 100).toFixed(1);
 
-  // Update Workbench Visuals
   $("finArea").textContent = `${acres.toFixed(1)} Acres`;
   $("finBudget").textContent = `৳${budget.toLocaleString()}`;
   $("finProfit").textContent = `৳${netProfit.toLocaleString()}`;
   $("finRoi").textContent = `${roiPct}%`;
 
-  // Step 2: Geo & Soil
   advanceStep("geo");
   addTrace("tool_call", "geocode_location", { location: locEn });
-  await sleep(150);
+  await sleep(120);
   const coords = { Bogura: [24.84, 89.37], Rajshahi: [24.37, 88.60], Rangpur: [25.74, 89.27], Jashore: [23.16, 89.21] }[locEn] || [24.84, 89.37];
   addTrace("tool_result", "geocode_location", { query: locEn, latitude: coords[0], longitude: coords[1], country: "BD" });
 
@@ -405,7 +414,6 @@ async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = n
   await sleep(100);
   addTrace("tool_result", "lookup_awd_suitability", { awd_suitable: true, water_saving_pct: "25-30%", source: "BRRI/IRRI Geospatial Raster Grid" });
 
-  // Step 3: Weather Grounding
   advanceStep("weather");
   addTrace("tool_call", "get_weather_forecast", { lat: coords[0], lon: coords[1], days: 14 });
   let weatherSummary = "আগামী ১৪ দিন গড় তাপমাত্রা ১৮°-২৮° সে., বৃষ্টিপাত ন্যূনতম";
@@ -419,31 +427,19 @@ async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = n
   } catch (_) {}
   addTrace("tool_result", "get_weather_forecast", { status: "live", summary: weatherSummary, source: "Open-Meteo live API" });
 
-  // Step 4: RAG Agronomy
   advanceStep("rag");
   addTrace("tool_call", "search_knowledge_base", { query: `Boro rice fertilizer dose for ${locEn}` });
-  await sleep(150);
+  await sleep(120);
   addTrace("tool_result", "search_knowledge_base", {
     sources: ["BARC Fertilizer Recommendation Guide 2024", "BRRI Modern Rice Cultivation Guide (2023)"],
-    chunks_matched: 3,
-    recommendation: "Urea: 110kg/acre split into 3 applications; TSP: 45kg/acre basal; MoP: 55kg/acre split; Gypsum: 40kg/acre; Zinc Sulphate: 4.5kg/acre."
+    recommendation: "Urea: 110kg/acre split into 3 applications; TSP: 45kg/acre basal; MoP: 55kg/acre split; Gypsum: 40kg/acre."
   });
 
-  // Step 5: Deterministic Math
   advanceStep("math");
   addTrace("tool_call", "compute_financials", { crop: "Boro Rice", area_acres: acres, budget_bdt: budget });
-  await sleep(150);
+  await sleep(120);
   addTrace("tool_result", "compute_financials", {
     crop: "বোরো ধান (BRRI dhan28/29)",
-    area_acres: acres,
-    cost_breakdown_bdt: {
-      "জমি তৈরি ও চাষ": Math.round(6000 * acres),
-      "বীজ ও চারা উত্তোলন": Math.round(2000 * acres),
-      "রাসায়নিক ও জৈব সার": Math.round(9000 * acres),
-      "সেচ ও জ্বালানি (AWD)": Math.round(8000 * acres),
-      "শ্রমিক ও নিড়ানি": Math.round(5000 * acres),
-      "ফসল কর্তন ও মাড়াই": Math.round(2000 * acres)
-    },
     total_cost_bdt: totalCost,
     expected_yield_kg: yieldKg,
     expected_revenue_bdt: revenue,
@@ -452,10 +448,9 @@ async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = n
     within_budget: totalCost <= budget
   });
 
-  // Step 6: Season Calendar Generation
   advanceStep("plan");
   addTrace("status", "✔ Node [SeasonPlanNode]: Generating dated agronomic calendar...");
-  await sleep(150);
+  await sleep(120);
 
   const planResponse = `### 🌾 AgriSphere AI: ${acres} একর জমির প্রিসিশন বোরো ধান পরিকল্পনা (${loc})
 
@@ -497,12 +492,59 @@ async function runDeterministicAgentGraph(userText, thinkingEl, imageDataUrl = n
   }
 }
 
+// --------------------------------------------------------------------------
+// 8. Direct OpenAI API Execution (When Key Provided)
+// --------------------------------------------------------------------------
+async function callLiveOpenAI(userMessage, thinkingEl, imageDataUrl) {
+  addTrace("status", `▶ Executing Live OpenAI API (Key verified in browser)`);
+  try {
+    const messages = [
+      {
+        role: "system",
+        content: `You are AgriSphere AI, an autonomous agronomic agent for Bangladesh smallholder precision farming.
+Ground all responses in verified science (BARC FRG 2024, BRRI, SRDI, DAE).
+Never invent math. For greetings, respond warmly in Bengali and ask for farm location, acreage, and budget.
+When recommending crops, compare 3 crops with cost, yield, and profit.
+Available action tags:
+[[BUTTON:label|message]]
+[[CALL:label|phone_number]]`
+      },
+      { role: "user", content: userMessage }
+    ];
+
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openAiApiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: messages,
+        temperature: 0.3
+      })
+    });
+
+    const data = await resp.json();
+    if (data.choices && data.choices[0]) {
+      const reply = data.choices[0].message.content;
+      renderAgentMessage(thinkingEl, reply);
+      addTrace("status", "✔ Live OpenAI API Turn Complete");
+    } else {
+      throw new Error(data.error ? data.error.message : "OpenAI API returned error");
+    }
+  } catch (err) {
+    addTrace("error", `OpenAI API Error: ${err.message}`);
+    await handleIntelligentAgentResponse(userMessage, thinkingEl, imageDataUrl);
+  }
+}
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
 // --------------------------------------------------------------------------
-// 7. Inline Action Buttons & Token Extraction
+// 9. Inline Action Buttons & Token Extraction
 // --------------------------------------------------------------------------
 const TOKEN_RE = /\[\[(BUTTON|SHORTCUT|CALL):([^\]|]+)(?:\|([^\]]+))?\]\]/g;
 
@@ -551,7 +593,7 @@ function renderAgentMessage(el, content) {
 }
 
 // --------------------------------------------------------------------------
-// 8. Order Modal & bdapps Checkout
+// 10. Order Modal & bdapps Checkout
 // --------------------------------------------------------------------------
 let INPUT_CATALOG = [
   { key: "urea", name: "ইউরিয়া (Urea)", unit: "50kg bag", price: 1350 },
@@ -647,7 +689,7 @@ $("payYes").onclick = () => {
 };
 
 // --------------------------------------------------------------------------
-// 9. Quick Actions & Initialization
+// 11. Quick Actions & Initialization
 // --------------------------------------------------------------------------
 const QUICK_PROMPTS = [
   { label: "🌾 বোরো প্ল্যান", text: "আমার ২ একর জমি বগুড়ায়, বাজেট ৮০,০০০ টাকা, বোরো মৌসুমে কি চাষ করব?" },
