@@ -3,6 +3,14 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -23,12 +31,14 @@ export default async function handler(req, res) {
   res.setHeader('Connection', 'keep-alive');
 
   const emit = (obj) => {
-    res.write(JSON.stringify(obj) + '\n');
+    try {
+      res.write(JSON.stringify(obj) + '\n');
+    } catch (_) {}
   };
 
   emit({ type: 'status', text: 'AgriSphere AI connected to OpenAI (gpt-4o-mini live agent)...' });
 
-  // Agronomic Tools Definition
+  // Tools definition
   const tools = [
     {
       type: "function",
@@ -122,7 +132,6 @@ export default async function handler(req, res) {
     }
   ];
 
-  // Tool dispatch implementations
   async function dispatchTool(name, args) {
     const t0 = Date.now();
     let result = {};
@@ -134,7 +143,7 @@ export default async function handler(req, res) {
         const d = await r.json();
         result = d.results && d.results[0]
           ? { name: d.results[0].name, latitude: d.results[0].latitude, longitude: d.results[0].longitude, country: "BD", source: "Open-Meteo Geocoding Live" }
-          : { name: loc, latitude: 24.84, longitude: 89.37, country: "BD", source: "Default fallback" };
+          : { name: loc, latitude: 24.84, longitude: 89.37, country: "BD" };
       } catch (_) {
         result = { name: loc, latitude: 24.84, longitude: 89.37, country: "BD" };
       }
@@ -148,10 +157,11 @@ export default async function handler(req, res) {
           summary: "Live 14-day weather retrieved",
           temp_range: `${Math.min(...d.daily.temperature_2m_min)}°C - ${Math.max(...d.daily.temperature_2m_max)}°C`,
           total_rain_mm: d.daily.precipitation_sum.reduce((a, b) => a + b, 0).toFixed(1),
+          daily: d.daily,
           source: "Open-Meteo Weather API Live"
         };
       } catch (_) {
-        result = { summary: "Live forecast unavailable, using seasonal average: 18°-28°C, minimal rainfall" };
+        result = { summary: "Live forecast unavailable, typical seasonal temp 18°-28°C" };
       }
     } else if (name === "lookup_soil_texture") {
       result = { soil_type: "বেলে-দোআঁশ (Sandy Loam)", texture: "Sandy Loam", source: "SRDI Soil Fertility Atlas (2020)" };
@@ -160,7 +170,7 @@ export default async function handler(req, res) {
     } else if (name === "search_knowledge_base") {
       result = {
         sources: ["BARC Fertilizer Recommendation Guide 2024 (FRG)", "BRRI Modern Rice Cultivation Guide (2023)"],
-        fertilizer_splits: "Urea: 110 kg/acre split in 3 doses (basal, tillering, panicle); TSP: 45 kg/acre basal; MoP: 55 kg/acre; Gypsum: 40 kg/acre.",
+        fertilizer_splits: "Urea: 110 kg/acre split in 3 doses; TSP: 45 kg/acre basal; MoP: 55 kg/acre; Gypsum: 40 kg/acre.",
         variety_recommendation: "BRRI dhan28, BRRI dhan29, BRRI dhan89"
       };
     } else if (name === "compute_financials") {
@@ -188,28 +198,26 @@ export default async function handler(req, res) {
     return { result, ms };
   }
 
-  const messages = [
-    {
-      role: "system",
-      content: `You are AgriSphere AI, the autonomous agronomic operating system for Bangladesh smallholder precision farming (Team DIU_Legacy1831).
-Always converse respectfully in natural, warm Bengali (or English if addressed in English).
-When a user simply greets (e.g. "hi", "hello", "সালাম"), greet them politely and ask for their land location, area (acres), and budget. DO NOT call tools or generate a full plan on a simple greeting!
-When farm parameters (acres, location, budget, crop) are given:
-1. Call geocode_location, lookup_soil_texture, lookup_awd_suitability, and get_weather_forecast.
-2. Call search_knowledge_base and compute_financials for crop options.
-3. Give an itemized comparison table of 3 crops with costs, yields, revenue, net profit, and ROI.
-4. Detail the dated fertilizer schedule from BARC FRG 2024.
-Include action tokens:
+  const systemContent = `You are AgriSphere AI, the autonomous agronomic operating system for Bangladesh smallholder precision farming (Team DIU_Legacy1831).
+You converse natively and naturally in Bengali (or English if spoken to in English).
+STRICT RULES:
+1. GREETING: If the user says hi/hello/সালাম, greet them warmly and ask for their land location, area (acres), and budget. DO NOT call tools or dump a full plan!
+2. WEATHER RISK: If the user asks about weather risks, call get_weather_forecast (defaulting to Bogura 24.84, 89.37 if location is unknown) and give a specific weather risk advisory (e.g. rain impact on fertilizer top-dressing).
+3. DISEASE/LEAF DIAGNOSIS: If an image or disease question is given, diagnose the pathology (e.g. Rice Blast / Sheath Blight), describe symptoms, and give exact chemical treatments from the DAE Plant Protection Guide.
+4. FULL PLAN: Only when farm parameters (area, location, crop) are provided, call geocode_location, lookup_soil_texture, lookup_awd_suitability, get_weather_forecast, search_knowledge_base, and compute_financials, then present a 3-crop comparison table and dated calendar.
+Include action tokens where relevant:
 [[BUTTON:label|message]]
-[[CALL:label|phone_number]]`
-    }
+[[CALL:label|phone_number]]`;
+
+  const messages = [
+    { role: "system", content: systemContent }
   ];
 
   if (image_data_url) {
     messages.push({
       role: "user",
       content: [
-        { type: "text", text: message || "Analyze this crop leaf photo for disease and recommend treatment." },
+        { type: "text", text: message || "আমার ফসলের এই পাতার ছবি দেখে রোগ নির্ণয় ও প্রতিকার বলুন।" },
         { type: "image_url", image_url: { url: image_data_url } }
       ]
     });
@@ -257,7 +265,6 @@ Include action tokens:
         return;
       }
 
-      // Execute tool calls
       for (const tc of assistantMsg.tool_calls) {
         const fnName = tc.function.name;
         let fnArgs = {};
