@@ -102,9 +102,10 @@ export function countUp(node, to, { decimals = 0, duration = 650, format } = {})
     print(target);
     return;
   }
-  const started = performance.now();
+  let started = null;
   const frame = (now) => {
-    const progress = Math.min(1, (now - started) / duration);
+    if (started === null || now < started) started = now;
+    const progress = Math.max(0, Math.min(1, (now - started) / duration));
     const eased = 1 - Math.pow(1 - progress, 3);
     print(target * eased);
     if (progress < 1) countFrames.set(node, requestAnimationFrame(frame));

@@ -1,325 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgriSphere AI — Autonomous Agronomic Decision & Digital Twin System</title>
-  <meta name="description" content="AgriSphere AI: Autonomous, non-hallucinating agricultural decision agent for Team DIU_Legacy1831 at the International AI Builders Congress." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>আমার খামার — AgriSphere Farm Dashboard</title>
+  <meta name="description" content="AgriSphere AI smart farm dashboard — plots, soil, weather, tasks and farm performance at a glance." />
 
-  <!-- Fonts: Inter Display, JetBrains Mono, Noto Sans Bengali -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Core Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous" />
+  <link rel="stylesheet" href="dashboard/tokens.css" />
+  <link rel="stylesheet" href="dashboard/dashboard.css" />
+  <link rel="stylesheet" href="dashboard/ui.css" />
+  <link rel="stylesheet" href="dashboard/hero.css" />
+  <link rel="stylesheet" href="dashboard/kpi.css" />
+  <link rel="stylesheet" href="dashboard/weather.css" />
+  <link rel="stylesheet" href="dashboard/soil.css" />
+  <link rel="stylesheet" href="dashboard/performance.css" />
+  <link rel="stylesheet" href="dashboard/tasks.css" />
+  <link rel="stylesheet" href="dashboard/map.css" />
+  <link rel="stylesheet" href="dashboard/plot3d.css" />
 </head>
-<body class="agrisphere-theme">
-  <!-- Interactive 3D Digital Twin Viewport (WebGL) -->
-  <div id="canvasContainer" class="canvas-container">
-    <canvas id="digitalTwinCanvas"></canvas>
-    <div class="canvas-overlay-vignette"></div>
-    <div class="canvas-controls">
-      <div class="coords-badge" id="telemetryCoords">
-        <span class="coord-icon">⌖</span>
-        <span class="coord-val">LAT: 24.8465° N · LON: 89.3777° E</span>
-        <span class="coord-region">(Bogura, Boro Zone)</span>
-      </div>
-      <div class="layer-pills">
-        <button class="layer-pill active" data-layer="terrain">Topography</button>
-        <button class="layer-pill" data-layer="soil">SRDI Soil</button>
-        <button class="layer-pill" data-layer="awd">BRRI AWD</button>
-        <button class="layer-pill" data-layer="weather">Open-Meteo Radar</button>
-      </div>
+<body>
+  <a class="skip-link" href="#main-grid">Skip to dashboard content</a>
+
+  <div class="sf-root" id="sf-root">
+    <div class="sf-shell">
+
+      <!-- Left rail (desktop) / injected by shell.js -->
+      <nav class="sf-rail" id="rail" aria-label="Primary"></nav>
+
+      <!-- Main content -->
+      <main class="sf-main" id="main-grid" tabindex="-1">
+        <div class="sf-grid">
+
+          <!-- Row A -->
+          <section class="sf-cell sf-cell--hero" id="hero" aria-labelledby="hero-title"></section>
+          <section class="sf-cell sf-cell--weather" id="weather-card" aria-labelledby="weather-title"></section>
+
+          <!-- Row B -->
+          <section class="sf-cell sf-cell--kpi" id="kpi-row" aria-label="Key performance indicators"></section>
+
+          <!-- Row C -->
+          <section class="sf-cell sf-cell--map" id="map-card" aria-labelledby="map-title"></section>
+          <div class="sf-cell sf-cell--side">
+            <section class="sf-cell sf-cell--soil" id="soil-card" aria-labelledby="soil-title"></section>
+            <section class="sf-cell sf-cell--perf" id="performance-card" aria-labelledby="perf-title"></section>
+          </div>
+          <section class="sf-cell sf-cell--tasks" id="task-strip" aria-labelledby="tasks-title"></section>
+
+        </div>
+      </main>
+
     </div>
+
+    <!-- Bottom nav (mobile) / injected by shell.js -->
+    <nav class="sf-bottomnav" id="bottom-nav" aria-label="Primary"></nav>
   </div>
 
-  <!-- Main Application Wrapper -->
-  <div class="app-layout">
-    <!-- Studio Header -->
-    <header class="app-header">
-      <div class="header-left">
-        <div class="brand-mark">
-          <div class="sphere-icon">
-            <div class="inner-core"></div>
-            <div class="orbital-ring"></div>
-          </div>
-          <div>
-            <div class="title-row">
-              <span class="brand-name">AgriSphere</span>
-              <span class="version-tag">OS 2.4</span>
-              <span class="team-tag">DIU_Legacy1831</span>
-            </div>
-            <span class="brand-desc">Autonomous Agronomic Intelligence Engine</span>
-          </div>
-        </div>
-      </div>
+  <!-- Live regions -->
+  <div class="sf-toasts" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
-      <!-- Agent Graph Pipeline Stepper -->
-      <nav class="agent-graph-nav" id="graphPipeline">
-        <div class="pipe-step active" id="step-intake" data-step="intake">
-          <span class="step-num">01</span>
-          <span class="step-label">Intake</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-geo" data-step="geo">
-          <span class="step-num">02</span>
-          <span class="step-label">Soil & AWD</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-weather" data-step="weather">
-          <span class="step-num">03</span>
-          <span class="step-label">Weather</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-rag" data-step="rag">
-          <span class="step-num">04</span>
-          <span class="step-label">RAG Agronomy</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-math" data-step="math">
-          <span class="step-num">05</span>
-          <span class="step-label">Finance Engine</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-plan" data-step="plan">
-          <span class="step-num">06</span>
-          <span class="step-label">Season Plan</span>
-        </div>
-        <div class="pipe-divider"></div>
-        <div class="pipe-step" id="step-caas" data-step="caas">
-          <span class="step-num">07</span>
-          <span class="step-label">bdapps CaaS</span>
-        </div>
-      </nav>
-
-      <!-- System Controls -->
-      <div class="header-right">
-        <div class="system-status">
-          <span class="status-dot live"></span>
-          <span class="status-text" id="statusKB">195 Chunks Verified</span>
-        </div>
-        <select id="modelSelect" class="system-select" title="Runtime Agent Engine">
-          <option value="gpt-5.1">OpenAI gpt-5.1 (Active)</option>
-          <option value="gpt-4o-mini">OpenAI gpt-4o-mini (Vision)</option>
-          <option value="deterministic-graph">Deterministic Graph (Zero-Hallucination)</option>
-        </select>
-        <button id="resetBtn" class="btn-system-reset" title="Flush farm context">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span>New Farm</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Studio Main Grid -->
-    <main class="studio-grid">
-      <!-- Left Column: Unified Interaction Console -->
-      <section class="console-column">
-        <!-- Weather & Risk Micro-Alert Hub -->
-        <div id="alertBanner" class="alert-banner-hub hidden"></div>
-
-        <!-- Chat & Deliberation Stream -->
-        <div id="messages" class="console-stream"></div>
-
-        <!-- Action Suggestion Matrix -->
-        <div class="action-matrix" id="quickActions"></div>
-
-        <!-- High-Precision Composer -->
-        <form id="composer" class="console-composer">
-          <input type="file" id="fileInput" accept="image/*" class="hidden" capture="environment" />
-          <button type="button" id="cameraBtn" class="composer-icon-btn" title="Upload Leaf Pathology Photo for Vision AI">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </button>
-          <div class="input-wrapper">
-            <input id="input" autocomplete="off" spellcheck="false"
-                   placeholder="e.g. ২ একর জমি বগুড়ায়, বাজেট ৮০,০০০ টাকা, বোরো মৌসুমে কি চাষ করব?" />
-            <kbd class="shortcut-hint">↵ Return</kbd>
-          </div>
-          <button type="submit" id="sendBtn" class="composer-send-btn">
-            <span>Execute</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </form>
-      </section>
-
-      <!-- Right Column: Verification & Intelligence Workbench -->
-      <aside class="workbench-column">
-        <!-- Workbench Navigation Tabs -->
-        <div class="workbench-tabs">
-          <button class="wb-tab active" data-tab="trace">Live Agent Trace</button>
-          <button class="wb-tab" data-tab="finance">Financial Engine</button>
-          <button class="wb-tab" data-tab="provenance">Gov Provenance (19 Docs)</button>
-          <button class="wb-tab" data-tab="market">bdapps CaaS</button>
-        </div>
-
-        <!-- Tab 1: Live Verifiable Agent Trace -->
-        <div class="wb-view active" id="view-trace">
-          <div class="trace-toolbar">
-            <div class="trace-meta">
-              <span class="trace-label">Deterministic Tool Dispatch</span>
-              <span class="trace-count" id="traceCount">0 Events</span>
-            </div>
-            <div class="trace-actions">
-              <button id="traceCopy" class="btn-trace-action">Copy JSON</button>
-              <button id="traceClear" class="btn-trace-action">Clear</button>
-            </div>
-          </div>
-          <div id="trace" class="trace-timeline"></div>
-        </div>
-
-        <!-- Tab 2: Deterministic Financial Matrix -->
-        <div class="wb-view" id="view-finance">
-          <div class="finance-card-hero">
-            <div class="fin-header">
-              <h3>Deterministic Agronomic Math</h3>
-              <span class="verified-badge">Python Runtime · 0% LLM Math Hallucination</span>
-            </div>
-            <div class="fin-metrics-grid">
-              <div class="fin-metric">
-                <span class="m-label">Target Land Area</span>
-                <span class="m-val" id="finArea">2.0 Acres</span>
-              </div>
-              <div class="fin-metric">
-                <span class="m-label">Allocated Budget</span>
-                <span class="m-val" id="finBudget">৳80,000</span>
-              </div>
-              <div class="fin-metric highlight">
-                <span class="m-label">Projected Net Profit</span>
-                <span class="m-val text-emerald" id="finProfit">৳76,000</span>
-              </div>
-              <div class="fin-metric">
-                <span class="m-label">Estimated ROI</span>
-                <span class="m-val text-amber" id="finRoi">118.8%</span>
-              </div>
-            </div>
-            <div class="fin-breakdown">
-              <h4>Itemized Cost Matrix (Boro Rice Baseline)</h4>
-              <div class="breakdown-row"><span>Land Prep & Tillage</span><span>৳12,000</span></div>
-              <div class="breakdown-row"><span>Seed & Nursery Raising</span><span>৳4,000</span></div>
-              <div class="breakdown-row"><span>Fertilizers (Urea, TSP, MoP, Gypsum, Zn)</span><span>৳18,000</span></div>
-              <div class="breakdown-row"><span>Irrigation & Fuel (AWD Method)</span><span>৳16,000</span></div>
-              <div class="breakdown-row"><span>Labor & Weeding</span><span>৳10,000</span></div>
-              <div class="breakdown-row"><span>Harvesting & Threshing</span><span>৳4,000</span></div>
-              <div class="breakdown-row total"><span>Total Cost of Cultivation</span><span>৳64,000</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 3: Official Provenance & RAG Knowledge Documents -->
-        <div class="wb-view" id="view-provenance">
-          <div class="provenance-container">
-            <div class="prov-header">
-              <h3>National Grounding Repositories (RAG)</h3>
-              <p>Every recommendation is backed by official published agricultural science:</p>
-            </div>
-            <div class="prov-grid">
-              <div class="prov-card">
-                <div class="prov-tag">BARC 2024</div>
-                <h4>Fertilizer Recommendation Guide (FRG)</h4>
-                <p>Standardized crop nutrient splits, macro/micronutrient doses for all agro-ecological zones (AEZ).</p>
-              </div>
-              <div class="prov-card">
-                <div class="prov-card-tag">BRRI 2023</div>
-                <h4>Modern Rice Cultivation Guidelines</h4>
-                <p>BRRI dhan28, 29, 89 varietal agronomy, AWD irrigation methodology, LCC nitrogen management.</p>
-              </div>
-              <div class="prov-card">
-                <div class="prov-card-tag">SRDI 2020</div>
-                <h4>Soil Fertility Atlas of Bangladesh</h4>
-                <p>Upazila-level spatial soil texture classification, pH, organic matter, and salinity boundaries.</p>
-              </div>
-              <div class="prov-card">
-                <div class="prov-card-tag">DAM 2024</div>
-                <h4>Division-wise Commodity Reports</h4>
-                <p>Daily retail and wholesale market prices across Dhaka, Rajshahi, Rangpur, Khulna, and Sylhet.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 4: bdapps CaaS Integration -->
-        <div class="wb-view" id="view-market">
-          <div class="caas-showcase">
-            <div class="caas-banner">
-              <div class="caas-title">
-                <h3>bdapps Charging as a Service (CaaS)</h3>
-                <span class="sandbox-pill">Direct Debit Verified</span>
-              </div>
-              <p>Direct telecom operator balance deduction (Robi / Airtel / Teletalk) with automated SMS confirmation receipts.</p>
-            </div>
-            <div class="caas-action-card">
-              <button id="openStoreBtn" class="btn-caas-launch">🛒 Open Fertilizer & Seed Order Builder</button>
-            </div>
-            <div class="sms-preview-device">
-              <div class="device-header">
-                <span class="device-speaker"></span>
-                <span class="sms-sender">bdapps: S1000 Receipt</span>
-              </div>
-              <div class="sms-bubble">
-                <p class="sms-text" id="smsReceipt">"AgriSphere: Tk 2,700 debited from your mobile balance for 2x Urea (50kg) + 1x TSP. Transaction ID: TXN_984128. BADC dealer dispatch in progress."</p>
-                <span class="sms-time">Now · via BDApps Gateway</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Verified Real vs Mock Footer Pill -->
-        <footer class="workbench-footer">
-          <div class="disclosure-item"><span class="dot-green"></span> Weather: Open-Meteo (Real Live)</div>
-          <div class="disclosure-item"><span class="dot-green"></span> RAG: ChromaDB (19 Gov Docs)</div>
-          <div class="disclosure-item"><span class="dot-green"></span> Math: Deterministic Engine</div>
-          <div class="disclosure-item"><span class="dot-blue"></span> bdapps: CaaS TAP Sandbox</div>
-        </footer>
-      </aside>
-    </main>
-  </div>
-
-  <!-- Order Modal (bdapps) -->
-  <div id="orderModal" class="modal-backdrop hidden">
-    <div class="studio-modal">
-      <div class="modal-titlebar">
-        <div>
-          <h3>🛒 BADC / DAE Input Order Builder</h3>
-          <p class="modal-sub">Direct Dealer Rates via Mobile Balance Debit (bdapps CaaS)</p>
-        </div>
-        <button id="orderCancelX" class="modal-close-btn">✕</button>
-      </div>
-      <div id="orderRows" class="order-item-list"></div>
-      <button id="orderAddRow" type="button" class="btn-add-item">+ Add Another Fertilizer / Seed</button>
-      <div class="order-invoice">
-        <span>Total Payable (BDT):</span>
-        <span class="invoice-amount">৳<span id="orderTotal">0</span></span>
-      </div>
-      <div class="modal-input-field">
-        <label for="orderPhone">Farmer Mobile Subscriber Number (Robi / Airtel / Teletalk)</label>
-        <input id="orderPhone" inputmode="numeric" placeholder="88018XXXXXXXX" />
-      </div>
-      <div class="modal-btn-row">
-        <button id="orderCancel" class="btn-ghost-modal">Cancel</button>
-        <button id="orderConfirm" class="btn-solid-modal">Proceed to Payment →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Direct Debit Modal -->
-  <div id="payModal" class="modal-backdrop hidden">
-    <div class="studio-modal pay-confirm">
-      <div class="modal-titlebar">
-        <h3>⚡ Authorize Direct Balance Debit</h3>
-        <span class="sandbox-indicator">bdapps TAP Sandbox</span>
-      </div>
-      <div id="payDetails" class="pay-details-pane"></div>
-      <div class="modal-btn-row">
-        <button id="payNo" class="btn-ghost-modal">Cancel</button>
-        <button id="payYes" class="btn-solid-modal confirm">Confirm & Debit Balance</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
+  <script type="module" src="dashboard/main.js"></script>
 </body>
 </html>

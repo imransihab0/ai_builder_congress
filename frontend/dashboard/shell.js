@@ -22,6 +22,10 @@ export function mountShell({ rail, bottomNav }) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 
   const visit = (name, targetId) => {
+    if (name === "bot") {
+      window.location.assign("chat.html");
+      return;
+    }
     const target = document.getElementById(targetId);
     if (!target) return;
     active = name;

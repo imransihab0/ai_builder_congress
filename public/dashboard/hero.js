@@ -63,7 +63,7 @@ export function mountHero(container, { onAddTask } = {}) {
         keydown: (event) => {
           if (event.key !== "Enter" || !event.currentTarget.value.trim()) return;
           event.preventDefault();
-          toast(t("agent.commandReceived"));
+          window.location.assign(`chat.html?q=${encodeURIComponent(event.currentTarget.value.trim())}`);
         },
       },
     });
