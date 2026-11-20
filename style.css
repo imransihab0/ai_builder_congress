@@ -286,6 +286,29 @@ body.agrisphere-theme {
   gap: 12px;
 }
 
+.btn-dashboard-link {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 8px;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.btn-dashboard-link:hover,
+.btn-dashboard-link:focus-visible {
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #ecfdf5;
+  background: rgba(16, 185, 129, 0.16);
+}
+
 .system-status {
   display: flex;
   align-items: center;
