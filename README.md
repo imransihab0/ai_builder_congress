@@ -1,8 +1,8 @@
-# AgriSense AI — Team DIU_Legacy1831
+# AgriSphere AI — Team DIU_Legacy1831
 
 **International AI Builders Congress — Idea to Unicorn (Preliminary Submission)**
 
-An autonomous, multi-modal agricultural decision and season-planning agent tailored for smallholder farmers and agro-enterprises. It transitions a farmer from a vague land description to a **costed, weather-grounded season calendar** — and maintains proactive advisory through harvest.
+An autonomous agronomic operating system and digital twin agent tailored for smallholder farmers and agro-enterprises. It transitions a farmer from a vague land description to a **costed, weather-grounded season calendar** — and maintains proactive advisory through harvest.
 
 Built with an **Agent Graph Architecture** to eliminate hallucination and loops, backed by **Convex** for reactive memory, **Three.js** for 3D geospatial visualization, **Open-Meteo** for real-time weather grounding, a **RAG Knowledge Base** over 19 national agricultural guides, a **deterministic Python financial engine**, and **bdapps TAP CaaS** for direct telecom operator checkout.
 
@@ -96,6 +96,6 @@ Farmer Query (Voice / Text / Image)
 - **Event:** International AI Builders Congress
 - **Team:** DIU_Legacy1831
 - **Phase:** Idea to Unicorn — Preliminary Submission
-- **Project Name:** AgriSense AI — Autonomous Agricultural Decision Agent
+- **Project Name:** AgriSphere AI — Autonomous Agronomic Operating System & Digital Twin
 - **Domain:** Agriculture & Food Security / Climate Resilience
 - **Challenge:** Autonomous Decision Support / Agentic AI for Economic Empowerment
