@@ -10,7 +10,7 @@ Built with an **Agent Graph Architecture** to eliminate hallucination and loops,
 
 ## 🚀 Live Demo & Repository
 - **GitHub Repository:** [https://github.com/imransihab0/ai_builder_congress](https://github.com/imransihab0/ai_builder_congress)
-- **Live Deployment:** [https://ai-builder-congress.vercel.app](https://ai-builder-congress.vercel.app) (Vercel Edge & Static)
+- **Live Deployment:** [https://aibuildercongress.vercel.app](https://aibuildercongress.vercel.app) (Vercel Live Production)
 - **Video Walkthrough:** [YouTube Demo Walkthrough](https://youtu.be/agrisense-demo-diu-legacy1831)
 
 ---
