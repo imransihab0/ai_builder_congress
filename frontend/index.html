@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriSense AI — Autonomous Agricultural Decision Agent</title>
+  <meta name="description" content="International AI Builders Congress — Autonomous agronomic decision agent with live weather, RAG, deterministic financial engine, and 3D geospatial visualization." />
+  
+  <!-- Modern Inter & Bengali typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Three.js for 3D Visualizer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Canvas Confetti for Peak-End Rule -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="antialiased">
+  <!-- 3D Interactive Background Canvas -->
+  <canvas id="threeCanvas"></canvas>
+
+  <!-- Top Navigation Header -->
+  <header class="glass-header">
+    <div class="brand">
+      <div class="logo-badge">
+        <span class="icon">🌾</span>
+        <div class="pulse-ring"></div>
+      </div>
+      <div>
+        <div class="brand-title">
+          <h1>AgriSense AI</h1>
+          <span class="badge team-badge">DIU_Legacy1831</span>
+          <span class="badge event-badge">AI Builders Congress</span>
+        </div>
+        <p class="brand-sub">Autonomous Agronomic Decision & Season-Planning Agent</p>
+      </div>
+    </div>
+
+    <!-- Agent Graph Pipeline Flow Indicator -->
+    <div class="agent-graph-status" id="agentGraphStatus" title="Active Agent Graph State">
+      <div class="graph-node active" id="node-intake" data-label="Intake"><span class="dot"></span>Intake</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-geo" data-label="Geo & Soil"><span class="dot"></span>Soil</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-weather" data-label="Weather"><span class="dot"></span>Weather</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-rag" data-label="Agronomy RAG"><span class="dot"></span>RAG</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-math" data-label="Deterministic Math"><span class="dot"></span>Math</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-plan" data-label="Calendar"><span class="dot"></span>Plan</div>
+      <span class="graph-edge">→</span>
+      <div class="graph-node" id="node-market" data-label="CaaS / bdapps"><span class="dot"></span>bdapps</div>
+    </div>
+
+    <div class="header-actions">
+      <select id="modelSelect" class="btn-select" title="Switch LLM Model live">
+        <option value="gpt-5.1">OpenAI gpt-5.1 (Active)</option>
+        <option value="gpt-4o-mini">OpenAI gpt-4o-mini (Vision / Fast)</option>
+        <option value="deterministic-graph">Deterministic Graph (Offline)</option>
+      </select>
+      <span id="health" class="status-pill"><span class="indicator live"></span>KB 195 chunks</span>
+      <button id="resetBtn" class="btn-ghost" title="Reset current farm memory">New Farm</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="app-container">
+    <!-- Chat Section -->
+    <section id="chatPane" class="pane glass-panel">
+      <!-- Proactive Weather Alert Banner -->
+      <div id="alertBanner" class="alert-banner hidden"></div>
+
+      <!-- Scrollable Message List -->
+      <div id="messages" class="messages-container"></div>
+
+      <!-- Quick Action Prompt Chips -->
+      <div id="quickActions" class="quick-actions-bar"></div>
+
+      <!-- Composer Bar -->
+      <form id="composer" class="composer-bar">
+        <input type="file" id="fileInput" accept="image/*" class="hidden" capture="environment" />
+        <button type="button" id="cameraBtn" class="composer-btn camera-btn" title="Upload or capture crop leaf photo for AI diagnosis">
+          📷
+        </button>
+        <input id="input" autocomplete="off"
+               placeholder="e.g. ২ একর জমি বগুড়ায়, বাজেট ৮০,০০০ টাকা, বোরো মৌসুমে কি চাষ করব?" />
+        <button type="submit" id="sendBtn" class="composer-btn send-btn">
+          <span>Send</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Draggable Divider -->
+    <div id="dragbar" class="dragbar" title="Drag to resize panel"></div>
+
+    <!-- Live Agent Trace & Deterministic Verifier Pane -->
+    <aside id="tracePane" class="pane glass-panel trace-panel">
+      <div class="trace-header">
+        <div>
+          <div class="trace-title">
+            <span class="radar-dot"></span>
+            <h2>Live Agent Trace</h2>
+          </div>
+          <p class="trace-subtitle">Real-time tool invocations · Deterministic math · Verified provenance</p>
+        </div>
+        <div class="trace-controls">
+          <button id="traceCopy" class="btn-sm" title="Copy full trace to clipboard">📋 Copy</button>
+          <button id="traceToggle" class="btn-sm" title="Toggle trace pane">⟩</button>
+        </div>
+      </div>
+      
+      <!-- Trace Feed -->
+      <div id="trace" class="trace-feed"></div>
+
+      <!-- Real vs Mock Provenance Footer -->
+      <div class="provenance-footer">
+        <div class="prov-badge real"><span class="dot"></span>Weather: Open-Meteo (Real)</div>
+        <div class="prov-badge real"><span class="dot"></span>RAG: BARC / BRRI / DAM (Real)</div>
+        <div class="prov-badge real"><span class="dot"></span>Finance: Deterministic Math (Real)</div>
+        <div class="prov-badge live"><span class="dot"></span>bdapps: CaaS Sandbox (Real)</div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Input Order Builder Modal (bdapps) -->
+  <div id="orderModal" class="modal-overlay hidden">
+    <div class="modal order-modal glass-modal">
+      <div class="modal-header">
+        <h3>🛒 সার ও বীজ অর্ডার (bdapps CaaS)</h3>
+        <p class="sub">BADC / DAE ডিলার রেটে সরাসরি মোবাইল ব্যালেন্স দিয়ে পেমেন্ট</p>
+      </div>
+      <div id="orderRows" class="order-rows"></div>
+      <button id="orderAddRow" type="button" class="btn-link">+ আরও উপকরণ যোগ করুন</button>
+      <div class="order-summary-box">
+        <span class="label">মোট প্রদেয় বিল:</span>
+        <span class="amount">৳<span id="orderTotal">0</span></span>
+      </div>
+      <div id="orderWarn" class="order-warn hidden"></div>
+      <div class="order-phone-input">
+        <label for="orderPhone">গ্রাহকের মোবাইল নম্বর (Robi / Airtel / Teletalk)</label>
+        <input id="orderPhone" inputmode="numeric" autocomplete="off" placeholder="88018XXXXXXXX" />
+      </div>
+      <div class="modal-actions">
+        <button id="orderCancel" class="btn-modal cancel">বাতিল</button>
+        <button id="orderConfirm" class="btn-modal confirm">পেমেন্টে যান →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CaaS Payment Direct Debit Confirmation Modal -->
+  <div id="payModal" class="modal-overlay hidden">
+    <div class="modal pay-modal glass-modal">
+      <div class="modal-header warning">
+        <h3>⚠️ সরাসরি ডেবিট নিশ্চিতকরণ</h3>
+        <span class="badge sandbox-badge">bdapps TAP Sandbox</span>
+      </div>
+      <div id="payDetails" class="pay-details-content"></div>
+      <div class="modal-actions">
+        <button id="payNo" class="btn-modal cancel">না, বাতিল</button>
+        <button id="payYes" class="btn-modal confirm">হ্যাঁ, পেমেন্ট নিশ্চিত করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

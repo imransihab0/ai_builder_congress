@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+openai>=1.50
+chromadb>=0.5
+httpx
+python-dotenv
+pypdf
+ddgs
+pytest

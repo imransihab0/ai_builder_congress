@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "name": "ai-builder-congress-agrisense",
+  "cleanUrls": true,
+  "public": true,
+  "builds": [
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/chat",
+      "dest": "/frontend/index.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/frontend/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ]
+}
