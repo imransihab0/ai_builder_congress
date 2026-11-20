@@ -97,5 +97,5 @@ Farmer Query (Voice / Text / Image)
 - **Team:** DIU_Legacy1831
 - **Phase:** Idea to Unicorn — Preliminary Submission
 - **Project Name:** AgriSphere AI — Autonomous Agronomic Operating System & Digital Twin
-- **Domain:** Agriculture & Food Security / Climate Resilience
-- **Challenge:** Autonomous Decision Support / Agentic AI for Economic Empowerment
+- **Domain:** Agriculture & Food Security / Smart AgTech
+- **Challenge:** Precision Farm
