@@ -36,7 +36,7 @@ _ISSUE_KINDS = {
     "flood_risk",
     "disease_risk",
 }
-_MAX_STATE_CHARS = 5_000_000
+_MAX_STATE_CHARS = 900_000
 _MAX_ITEMS = 10_000
 _MAX_POINTS = 10_000
 _MAX_SAFE_INTEGER = 2**53 - 1
