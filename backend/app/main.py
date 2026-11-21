@@ -1,12 +1,14 @@
 import json
 from pathlib import Path
-from fastapi import FastAPI
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import db, config, state
+from . import config, dashboard_store, db, state
 from .agent.loop import run_agent
 from .agent.graph import run_agent_graph
 
@@ -28,8 +30,23 @@ async def no_cache_frontend(request, call_next):
 
 db.init_db()
 
+_DASHBOARD_ERRORS = (
+    ValueError,
+    dashboard_store.DashboardNotFoundError,
+    dashboard_store.DashboardConfigError,
+    dashboard_store.DashboardStoreError,
+)
 
-from typing import Optional
+
+def _dashboard_http_exception(exc: Exception) -> HTTPException:
+    if isinstance(exc, ValueError):
+        return HTTPException(status_code=422, detail=str(exc))
+    if isinstance(exc, dashboard_store.DashboardNotFoundError):
+        return HTTPException(status_code=404, detail="Dashboard state or task not found")
+    if isinstance(exc, dashboard_store.DashboardConfigError):
+        return HTTPException(status_code=503, detail="Dashboard storage is not configured")
+    return HTTPException(status_code=502, detail="Dashboard storage is unavailable")
+
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -58,6 +75,10 @@ def profile(session_id: str):
 @app.post("/api/reset/{session_id}")
 def reset(session_id: str):
     db.reset_session(session_id)
+    try:
+        dashboard_store.delete_dashboard(session_id)
+    except _DASHBOARD_ERRORS as exc:
+        raise _dashboard_http_exception(exc) from None
     return {"ok": True}
 
 
@@ -97,6 +118,82 @@ class ModelRequest(BaseModel):
 @app.post("/api/model")
 def set_model(req: ModelRequest):
     return state.set_model(req.model)
+
+
+class DashboardRequest(BaseModel):
+    farm: dict
+    crops: list[dict]
+    plots: list[dict]
+    tasks: list[dict]
+
+    class Config:
+        extra = "forbid"
+
+
+class DashboardTaskRequest(BaseModel):
+    title: dict
+    plotId: Optional[str] = None
+    status: str
+    dueAt: Optional[str] = None
+    createdBy: str
+
+    class Config:
+        extra = "forbid"
+
+
+class DashboardTaskPatch(BaseModel):
+    title: Optional[dict] = None
+    plotId: Optional[str] = None
+    status: Optional[str] = None
+    dueAt: Optional[str] = None
+    createdBy: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
+
+
+def _model_dump(model: BaseModel, **kwargs) -> dict:
+    if hasattr(model, "model_dump"):
+        return model.model_dump(**kwargs)
+    return model.dict(**kwargs)
+
+
+@app.post("/api/dashboard/{session_id}/bootstrap")
+def bootstrap_dashboard(session_id: str, request: DashboardRequest):
+    try:
+        return dashboard_store.bootstrap_dashboard(session_id, _model_dump(request))
+    except _DASHBOARD_ERRORS as exc:
+        raise _dashboard_http_exception(exc) from None
+
+
+@app.get("/api/dashboard/{session_id}")
+def get_dashboard(session_id: str):
+    try:
+        return dashboard_store.get_dashboard(session_id)
+    except _DASHBOARD_ERRORS as exc:
+        raise _dashboard_http_exception(exc) from None
+
+
+@app.post("/api/dashboard/{session_id}/tasks", status_code=201)
+def create_dashboard_task(session_id: str, request: DashboardTaskRequest):
+    try:
+        return dashboard_store.create_dashboard_task(
+            session_id, _model_dump(request, exclude_unset=True)
+        )
+    except _DASHBOARD_ERRORS as exc:
+        raise _dashboard_http_exception(exc) from None
+
+
+@app.patch("/api/dashboard/{session_id}/tasks/{task_id}")
+def update_dashboard_task(
+    session_id: str, task_id: str, request: DashboardTaskPatch
+):
+    try:
+        return dashboard_store.update_dashboard_task(
+            session_id, task_id, _model_dump(request, exclude_unset=True)
+        )
+    except _DASHBOARD_ERRORS as exc:
+        raise _dashboard_http_exception(exc) from None
 
 
 FRONTEND = Path(__file__).resolve().parent.parent.parent / "frontend"

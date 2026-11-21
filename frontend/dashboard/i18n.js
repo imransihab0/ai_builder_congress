@@ -193,6 +193,7 @@ const MESSAGES = {
       skipContent: "ড্যাশবোর্ডের মূল অংশে যান",
       primaryNavigation: "প্রধান নেভিগেশন",
       kpiLabel: "খামারের মূল পরিসংখ্যান",
+      backendUnavailable: "সংরক্ষিত সার্ভারের তথ্য পাওয়া যাচ্ছে না। নমুনা তথ্য দেখানো হচ্ছে।",
     },
     agent: {
       placeholder: "আপনার খামার সম্পর্কে জিজ্ঞাসা করুন",
@@ -411,6 +412,7 @@ const MESSAGES = {
       skipContent: "Skip to dashboard content",
       primaryNavigation: "Primary navigation",
       kpiLabel: "Farm key performance indicators",
+      backendUnavailable: "Saved backend data is unavailable. Mock data is being shown.",
     },
     agent: {
       placeholder: "Ask about your farm",

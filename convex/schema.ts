@@ -67,4 +67,11 @@ export default defineSchema({
     paymentRef: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_session", ["sessionId"]),
+
+  dashboardStates: defineTable({
+    sessionId: v.string(),
+    state: v.any(),
+    nextTaskId: v.number(),
+    updatedAt: v.number(),
+  }).index("by_session", ["sessionId"]),
 });

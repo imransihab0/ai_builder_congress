@@ -9,10 +9,12 @@ import { mountTasks } from "./tasks.js";
 import { mountFarmMap } from "./map.js";
 import { closePlot3D, openPlot3D } from "./plot3d.js";
 import { el, toast } from "./ui.js";
+import { initializeData, refreshData } from "./data.js";
 
 applyDocumentLang();
 
 const cleanups = [];
+let destroyed = false;
 
 function localizeStaticShell() {
   document.title = `${t("dashboard.title")} — AgriSphere`;
@@ -48,18 +50,65 @@ async function openPlot(plotId) {
   }
 }
 
-mount("rail", (rail) => mountShell({ rail, bottomNav: document.getElementById("bottom-nav") }));
-const taskController = mount("task-strip", (container) => mountTasks(container, { onOpenPlot: openPlot }));
-if (taskController?.destroy) cleanups.push(taskController.destroy);
-mount("hero", (container) => mountHero(container, { onAddTask: taskController?.openCreate }));
-mount("kpi-row", mountKpis);
-mount("weather-card", mountWeather);
-mount("soil-card", mountSoil);
-mount("performance-card", mountPerformance);
-mount("map-card", (container) => mountFarmMap(container, { onOpenPlot: openPlot }));
+function mountDashboard() {
+  mount("rail", (rail) => mountShell({ rail, bottomNav: document.getElementById("bottom-nav") }));
+  const taskController = mount("task-strip", (container) => mountTasks(container, { onOpenPlot: openPlot }));
+  if (taskController?.destroy) cleanups.push(taskController.destroy);
+  mount("hero", (container) => mountHero(container, { onAddTask: taskController?.openCreate }));
+  mount("kpi-row", mountKpis);
+  mount("weather-card", mountWeather);
+  mount("soil-card", mountSoil);
+  mount("performance-card", mountPerformance);
+  mount("map-card", (container) => mountFarmMap(container, { onOpenPlot: openPlot }));
+}
+
+async function start() {
+  const root = document.getElementById("sf-root");
+  root?.setAttribute("aria-busy", "true");
+  let online = false;
+  try {
+    await initializeData();
+    online = true;
+  } catch (error) {
+    console.warn("Dashboard backend initialization failed", error);
+  }
+  if (destroyed) return;
+
+  mountDashboard();
+  root?.removeAttribute("aria-busy");
+  if (!online) {
+    toast(t("common.backendUnavailable"), { tone: "warning" });
+    return;
+  }
+
+  let refreshing = false;
+  const poll = async () => {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      await refreshData();
+    } catch (error) {
+      console.warn("Dashboard refresh failed", error);
+    } finally {
+      refreshing = false;
+    }
+  };
+  const interval = window.setInterval(poll, 10000);
+  const onVisibilityChange = () => {
+    if (!document.hidden) poll();
+  };
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  cleanups.push(() => {
+    window.clearInterval(interval);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  });
+}
+
+start();
 
 window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
+  destroyed = true;
   closePlot3D();
   cleanups.splice(0).reverse().forEach((cleanup) => cleanup());
 });

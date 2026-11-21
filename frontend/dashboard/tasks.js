@@ -99,9 +99,9 @@ export function mountTasks(container, { onOpenPlot } = {}) {
     const taskTitle = editingId ? { ...currentTitle, [getLocale()]: title } : { bn: title, en: title };
     const input = {
       title: taskTitle,
-      plotId: plotSelect.value || undefined,
+      plotId: plotSelect.value || null,
       status: statusSelect.value,
-      dueAt: dueInput.value ? `${dueInput.value}T12:00:00+06:00` : undefined,
+      dueAt: dueInput.value ? `${dueInput.value}T12:00:00+06:00` : null,
     };
     if (!editingId) input.createdBy = "farmer";
     saving = true;
@@ -112,7 +112,7 @@ export function mountTasks(container, { onOpenPlot } = {}) {
       dialog.close();
       toast(`${t("task.title")} - ${t("task.save")}`, { tone: "success" });
     } catch {
-      titleError.textContent = t("common.error");
+      titleError.textContent = t("task.saveError");
     } finally {
       saving = false;
       updateLabels();
